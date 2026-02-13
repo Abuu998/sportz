@@ -1,6 +1,13 @@
+import "ws";
 import { WebSocket, WebSocketServer, type Server } from "ws";
 import type { Match } from "@/db/schema";
 import type { Server as HTTPServer } from "http";
+
+declare module "ws" {
+  interface WebSocket {
+    isAlive: boolean;
+  }
+}
 
 function sendJSON<T>(socket: WebSocket, payload: T) {
   if (socket.readyState !== WebSocket.OPEN) return;
@@ -23,10 +30,27 @@ export function attachWebSocketServer(server: HTTPServer) {
   });
 
   ws.on("connection", (socket) => {
+    socket.isAlive = true;
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
     sendJSON(socket, { type: "welcome", message: "Welcome to the WebSocket server!" });
 
     socket.on("error", console.error);
   });
+
+  const interval = setInterval(() => {
+    ws.clients.forEach((w) => {
+      if (w.isAlive === false) {
+        w.terminate();
+      } else {
+        w.isAlive = false;
+        w.ping();
+      }
+    });
+  }, 30000);
+
+  ws.on("close", () => clearInterval(interval));
 
   function broadcastMatchCreated(match: Match) {
     broadcast(ws, { type: "match_created", data: match });
