@@ -23,10 +23,23 @@ export function attachWebSocketServer(server: HTTPServer) {
   });
 
   ws.on("connection", (socket) => {
+    socket.isAlive = true;
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
     sendJSON(socket, { type: "welcome", message: "Welcome to the WebSocket server!" });
 
     socket.on("error", console.error);
   });
+
+  const interval = setInterval(() => {
+    ws.clients.forEach((w) => {
+      if (w.isAlive === false) return w.terminate();
+
+      w.isAlive = false;
+      w.ping();
+    });
+  }, 30000);
 
   function broadcastMatchCreated(match: Match) {
     broadcast(ws, { type: "match_created", data: match });
