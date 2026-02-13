@@ -17,9 +17,7 @@ matchesRouter
     const parsed = listMatchesQuerySchema.safeParse(req.query);
 
     if (!parsed.success || !parsed.data)
-      return res
-        .status(400)
-        .json({ error: "Invalid data", details: JSON.stringify(parsed.error) });
+      return res.status(400).json({ error: "Invalid request data" });
 
     const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
 
@@ -30,12 +28,8 @@ matchesRouter
       })) as Match[];
       return res.status(200).json({ data });
     } catch (err) {
-      return res
-        .status(500)
-        .json({ error: "Failed to list matches.", details: JSON.stringify(err) });
+      return res.status(500).json({ error: "Failed to list matches." });
     }
-
-    return res.status(200).json({ message: "Matches List" });
   })
   .post("/", async (req, res) => {
     const parsed = createMatchSchema.safeParse(req.body);
@@ -59,8 +53,6 @@ matchesRouter
       const [event] = await db.insert(matches).values(dataValues).returning();
       return res.status(201).json({ data: event });
     } catch (err) {
-      return res
-        .status(500)
-        .json({ error: "Failed to create match.", details: JSON.stringify(err) });
+      return res.status(500).json({ error: "Failed to create match." });
     }
   });
