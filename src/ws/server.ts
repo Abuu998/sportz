@@ -1,6 +1,13 @@
+import "ws";
 import { WebSocket, WebSocketServer, type Server } from "ws";
 import type { Match } from "@/db/schema";
 import type { Server as HTTPServer } from "http";
+
+declare module "ws" {
+  interface WebSocket {
+    isAlive: boolean;
+  }
+}
 
 function sendJSON<T>(socket: WebSocket, payload: T) {
   if (socket.readyState !== WebSocket.OPEN) return;
@@ -34,7 +41,7 @@ export function attachWebSocketServer(server: HTTPServer) {
 
   const interval = setInterval(() => {
     ws.clients.forEach((w) => {
-      if (w.isAlive === false) return w.terminate();
+      if (w.isAlive === false) w.terminate();
 
       w.isAlive = false;
       w.ping();
