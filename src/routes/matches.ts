@@ -17,7 +17,9 @@ matchesRouter
     const parsed = listMatchesQuerySchema.safeParse(req.query);
 
     if (!parsed.success || !parsed.data)
-      return res.status(400).json({ error: "Invalid request data" });
+      return res
+        .status(400)
+        .json({ error: "Invalid request data", details: parsed.error.issues });
 
     const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
 
@@ -36,9 +38,7 @@ matchesRouter
     const { data } = parsed;
 
     if (!parsed.success || !parsed.data)
-      return res
-        .status(400)
-        .json({ error: "Invalid data", details: JSON.stringify(parsed.error) });
+      return res.status(400).json({ error: "Invalid data", details: parsed.error.issues });
 
     const dataValues: NewMatch = {
       ...data,
