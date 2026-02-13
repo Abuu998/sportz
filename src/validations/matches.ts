@@ -13,7 +13,7 @@ export const listMatchesQuerySchema = z.object({
 });
 
 export const matchIdParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
+  id: z.uuid({ version: "v4" }),
 });
 
 const isValidIsoString = (value: string) => {
@@ -26,12 +26,8 @@ export const createMatchSchema = z
     sport: z.string().min(1, { message: "sport is required" }),
     homeTeam: z.string().min(1, { message: "homeTown is required" }),
     awayTeam: z.string().min(1, { message: "awayTeam is required" }),
-    startTime: z
-      .string()
-      .refine(isValidIsoString, { message: "startTime must be a valid ISO date string" }),
-    endTime: z
-      .string()
-      .refine(isValidIsoString, { message: "endTime must be a valid ISO date string" }),
+    startTime: z.iso.datetime({ message: "startTime must be a valid ISO date string" }),
+    endTime: z.iso.datetime({ message: "endTime must be a valid ISO date string" }),
     homeScore: z.coerce.number().int().nonnegative().optional(),
     awayScore: z.coerce.number().int().nonnegative().optional(),
   })
