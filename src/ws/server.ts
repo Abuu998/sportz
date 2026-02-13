@@ -2,6 +2,7 @@ import "ws";
 import { WebSocket, WebSocketServer, type Server } from "ws";
 import type { Match } from "@/db/schema";
 import type { Server as HTTPServer } from "http";
+import { wsArcjet } from "@/arcjet";
 
 declare module "ws" {
   interface WebSocket {
@@ -29,7 +30,26 @@ export function attachWebSocketServer(server: HTTPServer) {
     maxPayload: 1024 * 1024,
   });
 
-  ws.on("connection", (socket) => {
+  ws.on("connection", async (socket, req) => {
+    if (wsArcjet) {
+      try {
+        const decision = await wsArcjet.protect(req);
+
+        if (decision.isDenied()) {
+          const code = decision.reason.isRateLimit() ? 1013 : 1008;
+          const reason = decision.reason.isRateLimit()
+            ? "Rate limit exceeded"
+            : "Access Denied";
+          socket.close(code, reason);
+          return;
+        }
+      } catch (err) {
+        console.error("WebSocket error", err);
+        socket.close(1011, "Server security error");
+        return;
+      }
+    }
+
     socket.isAlive = true;
     socket.on("pong", () => {
       socket.isAlive = true;
