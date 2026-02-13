@@ -8,47 +8,41 @@ if (!arcjetKey) {
   throw new Error("Missing environment variable 'ARCJET_KEY'");
 }
 
-export const httpArcjet = arcjetKey
-  ? arcjet({
-      key: arcjetKey,
-      rules: [
-        shield({ mode: arcjetMode }),
-        detectBot({ mode: arcjetMode, allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"] }),
-        slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
-      ],
-    })
-  : null;
+export const httpArcjet = arcjet({
+  key: arcjetKey,
+  rules: [
+    shield({ mode: arcjetMode }),
+    detectBot({ mode: arcjetMode, allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"] }),
+    slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
+  ],
+});
 
-export const wsArcjet = arcjetKey
-  ? arcjet({
-      key: arcjetKey,
-      rules: [
-        shield({ mode: arcjetMode }),
-        detectBot({ mode: arcjetMode, allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"] }),
-        slidingWindow({ mode: arcjetMode, interval: "2s", max: 5 }),
-      ],
-    })
-  : null;
+export const wsArcjet = arcjet({
+  key: arcjetKey,
+  rules: [
+    shield({ mode: arcjetMode }),
+    detectBot({ mode: arcjetMode, allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"] }),
+    slidingWindow({ mode: arcjetMode, interval: "2s", max: 5 }),
+  ],
+});
 
-export function securityMiddleware() {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    if (!httpArcjet) return next();
+export async function securityMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!httpArcjet) return next();
 
-    try {
-      const decision = await httpArcjet.protect(req);
+  try {
+    const decision = await httpArcjet.protect(req);
 
-      if (decision.isDenied()) {
-        if (decision.reason.isRateLimit()) {
-          return res.status(429).json({ error: "Too many request" });
-        }
-
-        return res.status(403).json({ error: "Forbidden" });
+    if (decision.isDenied()) {
+      if (decision.reason.isRateLimit()) {
+        return res.status(429).json({ error: "Too many requests" });
       }
-    } catch (err) {
-      console.error("Arcjet Middleware Error:", err);
-      return res.status(403).json({ error: "Service unavailable" });
-    }
 
-    next();
-  };
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  } catch (err) {
+    console.error("Arcjet Middleware Error:", err);
+    return res.status(503).json({ error: "Service unavailable" });
+  }
+
+  next();
 }
