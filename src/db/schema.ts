@@ -1,4 +1,5 @@
 import { generateId } from "@/lib/utils";
+import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, text, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 
 export const matchStatus = pgEnum("match_status", ["scheduled", "live", "finished"]);
@@ -27,11 +28,22 @@ export const commentaries = pgTable("commentaries", {
   eventType: text("event_type"),
   actor: text("actor"),
   team: text("team"),
-  message: text("message"),
+  message: text("message").notNull(),
   metadata: jsonb("metadata"),
   tags: jsonb("tags"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const matchesRelations = relations(matches, ({ many }) => ({
+  commentaries: many(commentaries),
+}));
+
+export const commentariesRelations = relations(commentaries, ({ one }) => ({
+  match: one(matches, {
+    fields: [commentaries.matchId],
+    references: [matches.id],
+  }),
+}));
 
 /** Type exports for type-safe queries */
 export type Match = typeof matches.$inferSelect;

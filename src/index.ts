@@ -3,6 +3,7 @@ import http from "http";
 import { matchesRouter } from "./routes/matches";
 import { attachWebSocketServer } from "./ws/server";
 import { securityMiddleware } from "./arcjet";
+import { commentaryRouter } from "./routes/commentaries";
 
 const PORT = process.env.PORT || 8000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -13,15 +14,16 @@ const httpServer = http.createServer(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(securityMiddleware);
 app.get("/", (req, res) => {
   res.json({ message: "Hello from Sportz!" });
 });
-
-app.use(securityMiddleware);
 app.use("/api/matches", matchesRouter);
+app.use("/api/matches/:id/commentaries", commentaryRouter);
 
-const { broadcastMatchCreated } = attachWebSocketServer(httpServer);
+const { broadcastMatchCreated, broadcastCommentary } = attachWebSocketServer(httpServer);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
+app.locals.broadcastCommentary = broadcastCommentary;
 
 httpServer.listen(Number(PORT), HOST, () => {
   const baseUrl = HOST === "0.0.0.0" ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
