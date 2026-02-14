@@ -13,7 +13,7 @@ export const listMatchesQuerySchema = z.object({
 });
 
 export const matchIdParamSchema = z.object({
-  id: z.string(),
+  id: z.uuid({ version: "v4" }),
 });
 
 const isValidIsoString = (value: string) => {
