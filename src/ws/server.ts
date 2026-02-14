@@ -31,6 +31,12 @@ export function attachWebSocketServer(server: HTTPServer) {
   });
 
   server.on("upgrade", async (req, socket, head) => {
+    const { pathname } = new URL(req.url!, `http://${req.headers.host}`);
+
+    if (pathname !== "/ws") {
+      return;
+    }
+
     if (wsArcjet) {
       try {
         const decision = await wsArcjet.protect(req);
